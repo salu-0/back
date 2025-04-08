@@ -5,8 +5,8 @@ const Todo = require('../models/Todo');
 router.post("/", async (req, res) => {
     try {
         const newTodo = new Todo(req.body);
-        await newTodo.save();
-        res.status(201).json({ message: "Todo created successfully!" });
+        const savedTodo = await newTodo.save();
+        res.status(201).json(savedTodo); // Return just the new todo instead of full list
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -14,7 +14,7 @@ router.post("/", async (req, res) => {
 
 router.get("/", async (req, res) => {
     try {
-        const todos = await Todo.find();
+        const todos = await Todo.find().sort({ _id: -1 }); // Sort by newest first
         res.status(200).json(todos);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -23,15 +23,20 @@ router.get("/", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
     try {
-        const todo = await Todo.findById(req.params.id);
-        if (todo) {
-            todo.text = req.body.text || todo.text;
-            todo.completed = req.body.completed !== undefined ? req.body.completed : todo.completed;
-            await todo.save();
-            res.status(200).json({ message: "Todo updated successfully!" });
-        } else {
-            res.status(404).json({ message: 'Todo not found' });
+        const todo = await Todo.findByIdAndUpdate(
+            req.params.id,
+            {
+                text: req.body.text,
+                completed: req.body.completed
+            },
+            { new: true, runValidators: true }
+        );
+        
+        if (!todo) {
+            return res.status(404).json({ message: 'Todo not found' });
         }
+        
+        res.status(200).json(todo); // Return updated todo
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -39,13 +44,11 @@ router.put("/:id", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
     try {
-        const todo = await Todo.findById(req.params.id);
-        if (todo) {
-            await todo.deleteOne(); // This is the correct method on a document
-            res.status(200).json({ message: "Todo deleted successfully!" });
-        } else {
-            res.status(404).json({ message: 'Todo not found' });
+        const todo = await Todo.findByIdAndDelete(req.params.id);
+        if (!todo) {
+            return res.status(404).json({ message: 'Todo not found' });
         }
+        res.status(200).json(todo); // Return deleted todo
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
