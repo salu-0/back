@@ -8,8 +8,7 @@ router.post("/", async (req, res) => {
         await newTodo.save();
         res.status(201).json({ message: "Todo created successfully!" });
     } catch (error) {
-        console.error('Error creating todo:', error);
-        res.status(500).json({ message: "Server error occurred. Please try again later.", error: error.message });
+        res.status(400).json({ error: error.message });
     }
 });
 
@@ -18,16 +17,12 @@ router.get("/", async (req, res) => {
         const todos = await Todo.find();
         res.status(200).json(todos);
     } catch (error) {
-        console.error('Error fetching todos:', error);
-        res.status(500).json({ message: "Server error occurred. Please try again later.", error: error.message });
+        res.status(500).json({ error: error.message });
     }
 });
 
 router.put("/:id", async (req, res) => {
     try {
-        if (!req.params.id) {
-            return res.status(400).json({ message: "Todo ID is required" });
-        }
         const todo = await Todo.findById(req.params.id);
         if (todo) {
             todo.text = req.body.text || todo.text;
@@ -38,27 +33,21 @@ router.put("/:id", async (req, res) => {
             res.status(404).json({ message: 'Todo not found' });
         }
     } catch (error) {
-        console.error('Error updating todo:', error);
-        res.status(500).json({ message: "Server error occurred. Please try again later.", error: error.message });
+        res.status(400).json({ error: error.message });
     }
 });
 
 router.delete("/:id", async (req, res) => {
     try {
-        if (!req.params.id) {
-            return res.status(400).json({ message: "Todo ID is required" });
-        }
-        
         const todo = await Todo.findById(req.params.id);
-        if (!todo) {
-            return res.status(404).json({ message: 'Todo not found' });
+        if (todo) {
+            await todo.remove();
+            res.status(200).json({ message: "Todo deleted successfully!" });
+        } else {
+            res.status(404).json({ message: 'Todo not found' });
         }
-
-        await todo.deleteOne(); // Using deleteOne() instead of findByIdAndDelete
-        res.status(200).json({ message: "Todo deleted successfully!" });
     } catch (error) {
-        console.error('Error deleting todo:', error);
-        res.status(500).json({ message: "Server error occurred. Please try again later.", error: error.message });
+        res.status(500).json({ error: error.message });
     }
 });
 
