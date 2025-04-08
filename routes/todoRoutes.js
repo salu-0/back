@@ -41,7 +41,7 @@ router.delete("/:id", async (req, res) => {
     try {
         const todo = await Todo.findById(req.params.id);
         if (todo) {
-            await todo.remove();
+            await todo.deleteOne(); // This is the correct method on a document
             res.status(200).json({ message: "Todo deleted successfully!" });
         } else {
             res.status(404).json({ message: 'Todo not found' });
